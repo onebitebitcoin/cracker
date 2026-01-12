@@ -1,0 +1,22 @@
+# Railway Configuration
+# https://docs.railway.app/deploy/config-as-code
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+# Backend 서버 시작 명령
+startCommand = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# 헬스체크 엔드포인트
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+
+# 재시작 정책
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# 리소스 제한 (선택사항)
+# [deploy.resources]
+# cpu = 1
+# memory = 1024
