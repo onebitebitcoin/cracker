@@ -59,6 +59,35 @@
 3. API 문서 (Swagger) 자동 반영 확인
 4. 테스트 코드 업데이트
 
+## Backend Configuration (CRITICAL)
+
+### Allowed Hosts & CORS
+백엔드 개발 시 다음 설정을 필수로 적용해야 한다:
+
+1. **Allowed Hosts**: 모든 호스트 허용 (`*`)
+2. **CORS Origin**: CORS origin 에러가 발생하지 않도록 설정
+
+**FastAPI 설정 예시**:
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# CORS 설정 - 모든 origin 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 모든 origin 허용
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
+```
+
+**주의사항**:
+- 개발 환경에서는 편의를 위해 모든 origin 허용
+- 프로덕션 환경에서는 보안을 위해 특정 origin만 허용하도록 변경 필요
+
 ## Git
 4) git commit message는 알아서 만들 것
    - 변경 내용 기반으로 명확한 메시지를 자동 생성

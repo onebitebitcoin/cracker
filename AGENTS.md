@@ -123,6 +123,95 @@ class AddressResponse(BaseModel):
     tx_count: int  # 추가됨 ✓
 ```
 
+---
+
+## Backend Configuration (CRITICAL)
+
+백엔드 개발 시 반드시 적용해야 할 설정들입니다.
+
+### Allowed Hosts & CORS
+
+**필수 설정**:
+1. **Allowed Hosts**: 모든 호스트 허용 (`*`)
+2. **CORS Origin**: CORS origin 에러가 발생하지 않도록 설정
+
+이는 개발 환경에서 프론트엔드와 백엔드 간의 통신 문제를 방지하기 위함입니다.
+
+### FastAPI 설정 방법
+
+**main.py 또는 app/__init__.py**:
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="Bitcoin Cracker API",
+    description="Bitcoin 블록체인 분석 API",
+    version="1.0.0"
+)
+
+# CORS 미들웨어 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # 모든 origin 허용 (개발 환경)
+    allow_credentials=True,     # 쿠키 포함 요청 허용
+    allow_methods=["*"],        # 모든 HTTP 메서드 허용 (GET, POST, PUT, DELETE 등)
+    allow_headers=["*"],        # 모든 헤더 허용
+)
+```
+
+### 환경별 설정 예시
+
+더 나은 방법은 환경 변수를 사용하여 개발/프로덕션 환경을 구분하는 것입니다:
+
+```python
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# 환경 설정
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+app = FastAPI()
+
+# 환경에 따른 CORS 설정
+if ENVIRONMENT == "development":
+    # 개발 환경: 모든 origin 허용
+    origins = ["*"]
+else:
+    # 프로덕션: 특정 origin만 허용
+    origins = [
+        "https://yourdomain.com",
+        "https://www.yourdomain.com",
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### 확인 방법
+
+CORS가 올바르게 설정되었는지 확인:
+```bash
+# 브라우저 개발자 도구 콘솔에서 확인
+# CORS 에러가 없어야 함:
+# ❌ "Access to fetch at '...' from origin '...' has been blocked by CORS policy"
+# ✅ 정상적으로 API 요청이 성공함
+```
+
+### 주의사항
+
+- **개발 환경**: 편의를 위해 모든 origin 허용 (`allow_origins=["*"]`)
+- **프로덕션 환경**: 보안을 위해 특정 origin만 허용 (도메인 명시)
+- **allow_credentials=True** 사용 시 `allow_origins=["*"]`는 보안상 권장되지 않으나, 개발 환경에서는 편의성을 우선
+
+---
+
 ## Git Rules
 4) git commit message는 알아서 만들 것
    - 변경 내용 기반으로 명확하고 간결한 메시지를 자동 생성한다.
