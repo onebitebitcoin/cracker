@@ -59,7 +59,8 @@
 - 변경 사항이 생기면 아래 순서로 마무리한다.
   1) 테스트 실행(프로젝트 표준 커맨드 사용)
   2) PASS/FAIL 확인 후, FAIL이면 수정 → 재테스트 반복
-  3) PASS면 최종적으로 `git add` → `git commit` → `git push`까지 수행한다.
+  3) PASS면 `git add` → `git commit` 수행
+  4) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
 
 ## Git Rules
 4) git commit message는 알아서 만들 것

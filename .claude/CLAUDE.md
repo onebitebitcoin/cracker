@@ -38,7 +38,8 @@
 - 코드 수정 후 항상:
   1) 테스트 실행 → PASS/FAIL 확인
   2) FAIL이면 수정 후 재테스트
-  3) PASS면 마지막에 `git add` → `git commit` → `git push`까지 수행
+  3) PASS면 `git add` → `git commit` 수행
+  4) `git push`는 사용자가 명시적으로 요청할 때만 수행
 
 ## Git
 4) git commit message는 알아서 만들 것
