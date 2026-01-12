@@ -41,6 +41,24 @@
   3) PASS면 `git add` → `git commit` 수행
   4) `git push`는 사용자가 명시적으로 요청할 때만 수행
 
+## Database & API Synchronization (CRITICAL)
+**스키마와 API는 항상 함께 업데이트되어야 한다.**
+
+- 데이터베이스 스키마가 변경되면 반드시 관련 API도 함께 업데이트해야 함
+- CRUD 기능 개발/수정 시 스키마와 API를 항상 같이 취급할 것
+- 스키마만 업데이트하고 API를 업데이트하지 않으면 불일치가 발생함
+
+**예시**:
+- 스키마에 새 필드 추가 → API response model에도 필드 추가
+- 스키마에서 필드 제거 → API에서도 해당 필드 제거
+- 스키마 필드 타입 변경 → API validation/serialization 로직도 변경
+
+**체크리스트**:
+1. 스키마 변경 시 영향받는 모든 API 엔드포인트 확인
+2. Pydantic 모델 (request/response) 업데이트
+3. API 문서 (Swagger) 자동 반영 확인
+4. 테스트 코드 업데이트
+
 ## Git
 4) git commit message는 알아서 만들 것
    - 변경 내용 기반으로 명확한 메시지를 자동 생성

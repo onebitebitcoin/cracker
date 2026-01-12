@@ -62,6 +62,67 @@
   3) PASS면 `git add` → `git commit` 수행
   4) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
 
+## Database & API Synchronization (CRITICAL)
+**스키마와 API는 항상 함께 업데이트되어야 한다.**
+
+처음에 만든 스키마와 API가 다른 상태에서 스키마가 업데이트되면 API는 업데이트되지 않기 때문에, 반드시 CRUD 기능에서는 스키마 업데이트와 API 업데이트를 같이 취급해야 한다.
+
+### 원칙
+- 데이터베이스 스키마가 변경되면 반드시 관련 API도 함께 업데이트해야 함
+- CRUD 기능 개발/수정 시 스키마와 API를 항상 같이 취급할 것
+- 스키마만 업데이트하고 API를 업데이트하지 않으면 불일치가 발생하여 런타임 에러 발생
+
+### 예시
+- **스키마에 새 필드 추가** → API response model (Pydantic)에도 필드 추가
+- **스키마에서 필드 제거** → API request/response model에서도 해당 필드 제거
+- **스키마 필드 타입 변경** → API validation/serialization 로직도 변경
+- **필드명 변경** → API 모델, 쿼리 로직, 문서 모두 변경
+
+### 체크리스트
+스키마 변경 시 반드시 확인할 항목:
+1. [ ] 영향받는 모든 API 엔드포인트 확인
+2. [ ] Pydantic 모델 (request/response schemas) 업데이트
+3. [ ] SQLAlchemy 모델과 Pydantic 모델 일치 확인
+4. [ ] API 문서 (Swagger/OpenAPI) 자동 반영 확인
+5. [ ] 관련 테스트 코드 업데이트
+6. [ ] 마이그레이션 스크립트 작성 (필요시)
+
+### 나쁜 예시
+```python
+# ❌ 스키마만 변경하고 API는 업데이트하지 않음
+# models.py
+class Address(Base):
+    address = Column(String)
+    balance = Column(Float)
+    cluster_id = Column(String)
+    tx_count = Column(Integer)  # 새로 추가
+
+# schemas.py (업데이트 안 함!)
+class AddressResponse(BaseModel):
+    address: str
+    balance: float
+    cluster_id: str
+    # tx_count 누락! → API 응답에 포함되지 않음
+```
+
+### 좋은 예시
+```python
+# ✅ 스키마와 API를 함께 업데이트
+# models.py
+class Address(Base):
+    address = Column(String)
+    balance = Column(Float)
+    cluster_id = Column(String)
+    tx_count = Column(Integer)  # 새로 추가
+
+# schemas.py (함께 업데이트!)
+class AddressResponse(BaseModel):
+    address: str
+    balance: float
+    cluster_id: str
+    tx_count: int  # 추가됨 ✓
+```
+
 ## Git Rules
 4) git commit message는 알아서 만들 것
    - 변경 내용 기반으로 명확하고 간결한 메시지를 자동 생성한다.
