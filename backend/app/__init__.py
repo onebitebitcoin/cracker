@@ -1,0 +1,1 @@
+"""Bitcoin Cracker Backend Application"""
