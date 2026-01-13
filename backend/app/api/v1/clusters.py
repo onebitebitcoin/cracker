@@ -65,7 +65,7 @@ async def get_cluster(cluster_id: str, db: Session = Depends(get_db)):
         db: Database session
 
     Returns:
-        클러스터 상세 정보
+        클러스터 상세 정보 (주소 목록 포함)
 
     Raises:
         HTTPException: 클러스터를 찾을 수 없는 경우 404
@@ -85,8 +85,32 @@ async def get_cluster(cluster_id: str, db: Session = Depends(get_db)):
             }
         )
 
-    logger.info(f"클러스터 조회 성공: {cluster.label}")
-    return cluster
+    # 클러스터에 속한 주소들 가져오기
+    addresses = db.query(Address).filter(Address.cluster_id == cluster_id).all()
+
+    logger.info(f"클러스터 조회 성공: {cluster.label}, 주소 {len(addresses)}개")
+
+    # ClusterResponse에 addresses 포함
+    from ...schemas.cluster import ClusterResponse, AddressInCluster
+
+    return ClusterResponse(
+        id=cluster.id,
+        label=cluster.label,
+        address_count=cluster.address_count,
+        total_balance=cluster.total_balance,
+        total_received=cluster.total_received,
+        total_sent=cluster.total_sent,
+        tx_count=cluster.tx_count,
+        first_seen=cluster.first_seen,
+        last_seen=cluster.last_seen,
+        created_at=cluster.created_at,
+        updated_at=cluster.updated_at,
+        addresses=[AddressInCluster(
+            address=addr.address,
+            balance=addr.balance,
+            tx_count=addr.tx_count
+        ) for addr in addresses]
+    )
 
 
 @router.get("/{cluster_id}/addresses", response_model=PaginatedResponse[dict])

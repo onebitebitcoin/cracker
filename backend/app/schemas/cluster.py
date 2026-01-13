@@ -3,6 +3,16 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
+class AddressInCluster(BaseModel):
+    """Address in cluster (simplified)"""
+    address: str
+    balance: float
+    tx_count: int
+
+    class Config:
+        from_attributes = True
+
+
 class ClusterResponse(BaseModel):
     """Cluster response schema"""
     id: str = Field(..., description="Cluster ID (UUID)")
@@ -16,6 +26,7 @@ class ClusterResponse(BaseModel):
     last_seen: Optional[str] = Field(None, description="Last seen timestamp")
     created_at: str = Field(..., description="Created timestamp")
     updated_at: str = Field(..., description="Updated timestamp")
+    addresses: List[AddressInCluster] = Field(default_factory=list, description="Addresses in this cluster")
 
     class Config:
         from_attributes = True

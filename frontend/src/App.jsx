@@ -3,7 +3,14 @@
  */
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Dashboard, SearchPage, ClustersPage } from './pages';
+import {
+  Dashboard,
+  SearchPage,
+  ClustersPage,
+  AddressDetailPage,
+  ClusterDetailPage,
+  AnalyticsPage,
+} from './pages';
 
 function App() {
   return (
@@ -12,10 +19,9 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/clusters" element={<ClustersPage />} />
-        {/* 추후 추가될 라우트 */}
-        {/* <Route path="/address/:address" element={<AddressPage />} /> */}
-        {/* <Route path="/cluster/:clusterId" element={<ClusterDetailPage />} /> */}
-        {/* <Route path="/analytics" element={<AnalyticsPage />} /> */}
+        <Route path="/address/:address" element={<AddressDetailPage />} />
+        <Route path="/cluster/:clusterId" element={<ClusterDetailPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
       </Routes>
     </Router>
   );

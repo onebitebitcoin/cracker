@@ -8,3 +8,4 @@ export * from './SearchBar';
 export * from './LoadingSpinner';
 export * from './ErrorAlert';
 export * from './StatsCard';
+export * from './TransactionList';
