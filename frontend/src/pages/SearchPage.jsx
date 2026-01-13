@@ -34,6 +34,17 @@ export const SearchPage = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Bitcoin 주소 형식 확인 (1, 3, bc1로 시작)
+      const isBitcoinAddress = /^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,62}$/.test(searchQuery);
+
+      if (isBitcoinAddress) {
+        // Bitcoin 주소인 경우 바로 상세 페이지로 이동
+        navigate(`/address/${searchQuery}`);
+        return;
+      }
+
+      // 그 외의 경우 검색 API 호출
       const data = await searchApi.search(searchQuery);
       setResults(data);
     } catch (err) {

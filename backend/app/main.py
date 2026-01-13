@@ -1,11 +1,14 @@
 """FastAPI main application"""
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import logging
+import os
+from pathlib import Path
 
 from .database import init_db
-from .api.v1 import addresses, clusters, search, analytics
+from .api.v1 import addresses, clusters, search, analytics, test
 from .utils.logger import setup_logger
 
 # Setup logger
@@ -116,6 +119,44 @@ app.include_router(
     prefix="/api/v1/analytics",
     tags=["analytics"]
 )
+
+app.include_router(
+    test.router,
+    prefix="/api/v1/test",
+    tags=["test"]
+)
+
+
+# Static files serving (Frontend)
+# Frontend가 빌드된 경로 확인
+frontend_dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+if frontend_dist_path.exists():
+    # Mount static files (JS, CSS, images, etc.)
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist_path / "assets")), name="assets")
+
+    # SPA fallback - 모든 경로에 대해 index.html 반환
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """
+        SPA (Single Page Application) fallback
+        API 경로가 아닌 모든 경로는 index.html을 반환
+        """
+        # API 경로는 제외
+        if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc"):
+            raise HTTPException(status_code=404, detail="Not found")
+
+        # index.html 반환
+        index_path = frontend_dist_path / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        else:
+            raise HTTPException(status_code=404, detail="Frontend not found")
+
+    logger.info(f"Frontend static files mounted from: {frontend_dist_path}")
+else:
+    logger.warning(f"Frontend dist directory not found at: {frontend_dist_path}")
+    logger.warning("Frontend will not be served. API endpoints are still available.")
 
 
 logger.info("FastAPI 애플리케이션 설정 완료")

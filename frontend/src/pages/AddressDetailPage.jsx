@@ -146,23 +146,27 @@ export const AddressDetailPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatsCard
                 icon={Wallet}
-                label="잔액"
-                value={`${addressData.balance?.toFixed(4) || '0'} BTC`}
+                label="총 잔액"
+                value={`${addressData.balance?.toFixed(8) || '0'} BTC`}
+                description={addressData.source === 'electrum' ? 'Electrum 데이터' : ''}
               />
               <StatsCard
                 icon={TrendingDown}
-                label="총 수신"
-                value={`${addressData.total_received?.toFixed(4) || '0'} BTC`}
+                label="확인된 잔액"
+                value={`${addressData.confirmed_balance?.toFixed(8) || addressData.balance?.toFixed(8) || '0'} BTC`}
+                description="컨펌된 트랜잭션"
               />
               <StatsCard
                 icon={TrendingUp}
-                label="총 송신"
-                value={`${addressData.total_sent?.toFixed(4) || '0'} BTC`}
+                label="미확인 잔액"
+                value={`${addressData.unconfirmed_balance?.toFixed(8) || '0'} BTC`}
+                description="대기 중인 트랜잭션"
               />
               <StatsCard
                 icon={Package}
                 label="트랜잭션 수"
                 value={addressData.tx_count || 0}
+                description={`${addressData.tx_count || 0}개의 트랜잭션`}
               />
             </div>
 

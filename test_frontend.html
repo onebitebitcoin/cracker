@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Cracker - 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fef9f3;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d68910;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fef9f3;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .link-list {
+            display: grid;
+            gap: 10px;
+        }
+        .link-item {
+            padding: 12px 16px;
+            background: white;
+            border: 2px solid #f0e6d6;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            display: block;
+            transition: all 0.2s;
+        }
+        .link-item:hover {
+            border-color: #d68910;
+            background: #fffaf0;
+        }
+        .link-item strong {
+            color: #d68910;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .link-item small {
+            color: #666;
+            font-family: monospace;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .status.live {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box strong {
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bitcoin Cracker</h1>
+        <p class="subtitle">
+            <span class="status live">실행 중</span>
+            Electrum 서버 연동 완료
+        </p>
+
+        <div class="info-box">
+            <strong>📡 서버 상태</strong><br>
+            • Backend: <code>http://localhost:8000</code> (FastAPI + Electrum)<br>
+            • Frontend: <code>http://localhost:5173</code> (React + Vite)<br>
+            • Electrum: <code>175.195.68.72:50001</code> (electrs/0.10.9)
+        </div>
+
+        <div class="section">
+            <h2>🔗 빠른 링크</h2>
+            <div class="link-list">
+                <a href="http://localhost:5173" class="link-item" target="_blank">
+                    <strong>Frontend (홈)</strong>
+                    <small>http://localhost:5173</small>
+                </a>
+                <a href="http://localhost:8000/docs" class="link-item" target="_blank">
+                    <strong>Backend API 문서</strong>
+                    <small>http://localhost:8000/docs (Swagger UI)</small>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🏦 테스트할 Bitcoin 주소</h2>
+            <div class="link-list">
+                <a href="http://localhost:5173/address/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" class="link-item" target="_blank">
+                    <strong>Genesis Block (Satoshi)</strong>
+                    <small>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</small>
+                    <div style="margin-top: 8px; color: #28a745; font-size: 14px;">
+                        ✓ 잔액: ~130,010 BTC
+                    </div>
+                </a>
+                <a href="http://localhost:5173/address/bc1qgdjqv0av3q56jvd82tkdjpy7gdp9ut8tlqmgrpmv24sq90ecnvqqjwvw97" class="link-item" target="_blank">
+                    <strong>Bitfinex Hot Wallet</strong>
+                    <small>bc1qgdjqv0av3q56jvd82tkdjpy7gdp9ut8tlqmgrpmv24sq90ecnvqqjwvw97</small>
+                </a>
+                <a href="http://localhost:5173/address/3J98t1WpEZ73CNmYviecrnyiWrnqRhWNLy" class="link-item" target="_blank">
+                    <strong>P2SH 주소</strong>
+                    <small>3J98t1WpEZ73CNmYviecrnyiWrnqRhWNLy</small>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 검색 테스트</h2>
+            <div class="link-list">
+                <a href="http://localhost:5173/search?q=1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" class="link-item" target="_blank">
+                    <strong>주소 검색</strong>
+                    <small>Genesis 주소로 검색 (자동으로 상세 페이지 이동)</small>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Backend API 테스트</h2>
+            <div class="link-list">
+                <a href="http://localhost:8000/api/v1/addresses/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" class="link-item" target="_blank">
+                    <strong>주소 API (Genesis)</strong>
+                    <small>GET /api/v1/addresses/{address}</small>
+                </a>
+                <a href="http://localhost:8000/api/v1/test/electrum/balance/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" class="link-item" target="_blank">
+                    <strong>Electrum 테스트 API</strong>
+                    <small>GET /api/v1/test/electrum/balance/{address}</small>
+                </a>
+                <a href="http://localhost:8000/api/v1/analytics/summary" class="link-item" target="_blank">
+                    <strong>Analytics API</strong>
+                    <small>GET /api/v1/analytics/summary</small>
+                </a>
+            </div>
+        </div>
+
+        <div class="info-box" style="background: #d1ecf1; border-color: #17a2b8;">
+            <strong>💡 사용 방법</strong><br>
+            1. 위의 테스트 주소 링크를 클릭하여 실제 Electrum 데이터 확인<br>
+            2. Frontend에서 검색 바에 Bitcoin 주소 입력<br>
+            3. 주소 상세 페이지에서 확인된 잔액, 미확인 잔액, 트랜잭션 수 확인<br>
+            4. "Electrum 데이터" 표시 확인
+        </div>
+    </div>
+</body>
+</html>

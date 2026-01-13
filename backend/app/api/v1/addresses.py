@@ -1,7 +1,8 @@
 """Address API endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 from ...database import get_db
 from ...models import Address, Transaction, TransactionInput, TransactionOutput
@@ -10,104 +11,163 @@ from ...schemas.transaction import TransactionListResponse
 from ...schemas.common import PaginatedResponse
 from ...utils.logger import logger
 from ...utils.exceptions import AddressNotFoundException
+from ...dependencies import get_electrum_client
+from ...services.electrum_client import ElectrumClient
 
 router = APIRouter()
 
 
-@router.get("/{address}", response_model=AddressResponse)
-async def get_address(address: str, db: Session = Depends(get_db)):
+@router.get("/{address}")
+async def get_address(
+    address: str,
+    electrum: ElectrumClient = Depends(get_electrum_client)
+):
     """
-    주소 상세 정보 조회
+    주소 상세 정보 조회 (Electrum 서버 사용)
 
     Args:
         address: Bitcoin 주소
-        db: Database session
+        electrum: Electrum 클라이언트
 
     Returns:
         주소 상세 정보
 
     Raises:
-        HTTPException: 주소를 찾을 수 없는 경우 404
+        HTTPException: 조회 실패 시 500
     """
-    logger.info(f"주소 조회 요청: {address}")
+    logger.info(f"주소 조회 요청 (Electrum): {address}")
 
-    addr = db.query(Address).filter(Address.address == address).first()
+    try:
+        # Electrum 서버에서 잔액 조회
+        balance_data = electrum.get_balance(address)
+        if balance_data is None:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "message": "주소 정보를 가져올 수 없습니다",
+                    "error": "Electrum server error"
+                }
+            )
 
-    if not addr:
-        logger.warning(f"주소를 찾을 수 없음: {address}")
+        # Electrum 서버에서 트랜잭션 히스토리 조회
+        history = electrum.get_history(address)
+        if history is None:
+            history = []
+
+        # 잔액 변환 (satoshi -> BTC)
+        confirmed_btc = balance_data.get("confirmed", 0) / 100_000_000
+        unconfirmed_btc = balance_data.get("unconfirmed", 0) / 100_000_000
+        total_balance = confirmed_btc + unconfirmed_btc
+
+        # 응답 데이터 구성
+        response = {
+            "address": address,
+            "balance": total_balance,
+            "confirmed_balance": confirmed_btc,
+            "unconfirmed_balance": unconfirmed_btc,
+            "total_received": None,  # Electrum은 total_received를 직접 제공하지 않음
+            "total_sent": None,
+            "tx_count": len(history),
+            "first_seen": None,
+            "last_seen": None,
+            "cluster_id": None,
+            "source": "electrum"  # 데이터 출처 표시
+        }
+
+        logger.info(f"주소 조회 성공 (Electrum): {address}, 잔액={total_balance} BTC, 트랜잭션={len(history)}개")
+        return response
+
+    except Exception as e:
+        logger.error(f"주소 조회 실패 (Electrum): {address}, 에러={str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=404,
+            status_code=500,
             detail={
-                "message": "주소를 찾을 수 없습니다",
-                "error": f"Address not found: {address}",
-                "type": "AddressNotFound"
+                "message": "주소 조회 중 오류 발생",
+                "error": str(e),
+                "type": "ElectrumError"
             }
         )
 
-    logger.info(f"주소 조회 성공: {address}")
-    return addr
 
-
-@router.get("/{address}/transactions", response_model=PaginatedResponse[TransactionListResponse])
+@router.get("/{address}/transactions")
 async def get_address_transactions(
     address: str,
-    db: Session = Depends(get_db),
+    electrum: ElectrumClient = Depends(get_electrum_client),
     limit: int = Query(50, ge=1, le=100, description="결과 개수"),
     offset: int = Query(0, ge=0, description="시작 위치")
 ):
     """
-    주소의 트랜잭션 히스토리 조회
+    주소의 트랜잭션 히스토리 조회 (Electrum 서버 사용)
 
     Args:
         address: Bitcoin 주소
+        electrum: Electrum 클라이언트
         limit: 페이지 크기
         offset: 시작 위치
-        db: Database session
 
     Returns:
         트랜잭션 목록 (페이지네이션)
 
     Raises:
-        HTTPException: 주소를 찾을 수 없는 경우 404
+        HTTPException: 조회 실패 시 500
     """
-    logger.info(f"주소 트랜잭션 조회: {address}, limit={limit}, offset={offset}")
+    logger.info(f"주소 트랜잭션 조회 (Electrum): {address}, limit={limit}, offset={offset}")
 
-    # Check if address exists
-    addr = db.query(Address).filter(Address.address == address).first()
-    if not addr:
-        raise HTTPException(status_code=404, detail="주소를 찾을 수 없습니다")
+    try:
+        # Electrum 서버에서 트랜잭션 히스토리 조회
+        history = electrum.get_history(address)
+        if history is None:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "message": "트랜잭션 정보를 가져올 수 없습니다",
+                    "error": "Electrum server error"
+                }
+            )
 
-    # Get transactions where address is in inputs or outputs
-    tx_ids_from_inputs = db.query(TransactionInput.txid).filter(
-        TransactionInput.address == address
-    ).distinct()
+        # 페이지네이션 적용
+        total = len(history)
+        paginated_history = history[offset:offset + limit]
 
-    tx_ids_from_outputs = db.query(TransactionOutput.txid).filter(
-        TransactionOutput.address == address
-    ).distinct()
+        # 트랜잭션 데이터 변환
+        transactions = []
+        for tx_info in paginated_history:
+            tx_data = {
+                "txid": tx_info.get("tx_hash"),
+                "block_height": tx_info.get("height"),
+                "confirmations": None,  # Electrum은 confirmations를 직접 제공하지 않음
+                "timestamp": None,
+                "fee": None,
+                "source": "electrum"
+            }
+            transactions.append(tx_data)
 
-    # Union the two queries
-    all_txids = tx_ids_from_inputs.union(tx_ids_from_outputs)
+        # 페이지 계산
+        total_pages = (total + limit - 1) // limit if total > 0 else 1
+        current_page = (offset // limit) + 1
 
-    # Get transaction details
-    total = all_txids.count()
-    txids = [row[0] for row in all_txids.limit(limit).offset(offset).all()]
+        logger.info(f"트랜잭션 조회 완료 (Electrum): {len(transactions)}개 (전체 {total}개)")
 
-    transactions = db.query(Transaction).filter(Transaction.txid.in_(txids)).all()
+        return {
+            "data": transactions,
+            "total": total,
+            "page": current_page,
+            "page_size": limit,
+            "total_pages": total_pages
+        }
 
-    # Calculate total pages
-    total_pages = (total + limit - 1) // limit if total > 0 else 1
-    current_page = (offset // limit) + 1
-
-    logger.info(f"트랜잭션 조회 완료: {len(transactions)}개")
-
-    return PaginatedResponse(
-        data=[TransactionListResponse.from_orm(tx) for tx in transactions],
-        total=total,
-        page=current_page,
-        page_size=limit,
-        total_pages=total_pages
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"트랜잭션 조회 실패 (Electrum): {address}, 에러={str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "트랜잭션 조회 중 오류 발생",
+                "error": str(e),
+                "type": "ElectrumError"
+            }
+        )
 
 
 @router.get("/{address}/cluster")
